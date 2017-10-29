@@ -1,5 +1,7 @@
 var express = require('express');
 
+var User = require('../models/User');
+
 var router = express.Router();
 
 //统一返回格式
@@ -24,9 +26,9 @@ router.use(function (req,res,next) {
  */
 router.post('/user/register',function (req,res,next) {
 
-    var username=req.body.username;
+    var username=req.body.username || 'liang';
 
-    var password = req.body.password;
+    var password = req.body.password || '123456';
 
     var repassword= req.body.repassword;
 
@@ -46,8 +48,33 @@ router.post('/user/register',function (req,res,next) {
         return;
     }
 
-    responseData.message = '添加成功';
-    res.json(responseData);
+    //验证用户名是否被占用
+    User.findOne({
+        username:username
+    }).then(function (userInfo) {
+
+        //如果有
+        if(userInfo){
+            responseData.code = 4;
+            responseData.message = '用户名已存在';
+            res.json(responseData);
+            return;
+        }
+
+        //保存到数据库中
+        var user = new User({
+            username : username,
+            password : password
+        });
+
+        return user.save();
+    }).then(function (newUserInfo) {
+
+        responseData.message = '添加成功';
+        res.json(responseData);
+    });
+
+
 
 });
 
